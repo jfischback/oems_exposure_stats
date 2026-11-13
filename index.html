@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exposure Statistics Tool | OEMS</title>
+<meta name="description" content="Walks a similar exposure group's sample results from the data-quality check through sampling and analytical error, confidence limits, the 95th percentile, UCL / UTL, exceedance fraction and Bayesian decision analysis to a plain-language compliance call against the OEL and the action level.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="disclaimer.css">
+<script>try { if (localStorage.getItem("oems_disclaimer_v1")) document.documentElement.classList.add("oems-agreed"); } catch (e) {}</script>
+</head>
+<body>
+  <div class="oems-gate" id="oemsGate">
+    <div class="oems-gate-bar">
+      <div class="oems-gate-brand">
+        <span class="oems-gate-name">OEMS</span>
+        <span class="oems-gate-full">Occupational Exposure Management Systems LLC</span>
+      </div>
+    </div>
+    <div class="oems-gate-card" role="dialog" aria-modal="true" aria-labelledby="oemsGateTitle" tabindex="-1">
+      <h2 id="oemsGateTitle">Before you use this tool</h2>
+      <p>This calculator is provided by OEMS (Occupational Exposure Management Systems) for general informational and educational purposes only. It is not professional industrial hygiene, medical, engineering, or legal advice, and it does not replace an evaluation by a qualified professional.</p>
+      <p>Results depend entirely on the information you enter and on the assumptions built into the tool. They may be incomplete, inaccurate, or not applicable to your workplace. You are responsible for verifying all results against applicable regulations (including OSHA standards), manufacturer data, and your organization’s requirements before relying on them.</p>
+      <p>Do not use this tool as the sole basis for decisions that affect worker health or safety, including respirator selection, ventilation design, or hearing protection selection.</p>
+      <p>OEMS makes no warranties, express or implied, about the accuracy, completeness, or fitness for a particular purpose of this tool or its results. To the fullest extent permitted by law, OEMS is not liable for any loss, injury, or damage arising from use of, or reliance on, this tool.</p>
+      <label class="oems-gate-check"><input type="checkbox" id="oemsGateCheck"> <span>I have read and understand this disclaimer, and I agree to use this tool at my own risk.</span></label>
+      <button type="button" class="oems-gate-btn" id="oemsGateBtn" disabled>I agree — continue</button>
+    </div>
+  </div>
+  <script src="disclaimer.js"></script>
+
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <div class="brand">
+        <span class="brand-name">OEMS</span>
+        <span class="brand-full">Occupational Exposure Management Systems LLC</span>
+      </div>
+      <div class="tag">Exposure assessment tools for Health &amp; Safety Professionals</div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="intro" id="intro">
+      <div class="intro-main">
+        <p class="draft">Exposure Statistics v1.0 · Draft</p>
+        <h1>Exposure Statistics Tool</h1>
+        <p class="lead">From raw sample results to a plain-language compliance call: data-quality check, sampling and analytical error, confidence limits, the 95th percentile with its UCL / UTL, exceedance fraction and Bayesian decision analysis against the OEL and the action level.</p>
+        <p class="intro-src">Lognormal methods as in AIHA's <em>A Strategy for Assessing and Managing Occupational Exposures</em> (4th ed.), IHSTAT / IHSTAT-Bayes and Expostats; sampling and analytical error as in the OSHA Technical Manual and NIOSH. Use it on its own or as part of a risk assessment.</p>
+      </div>
+      <div class="intro-side">
+        <p class="actions">
+          <button type="button" class="btn" id="loadExample">Load worked example</button>
+          <button type="button" class="btn ghost" id="clearAll">Clear all</button>
+        </p>
+        <span class="libstatus ok">Runs in the browser; nothing is uploaded</span>
+      </div>
+      <p class="legend">
+        <span class="legend-t">Colour key</span>
+        <span class="chip chip-entry">Grey = enter or pick</span>
+        <span class="chip chip-calc">Green = calculated</span>
+        <span class="chip chip-go">Go</span>
+        <span class="chip chip-more">Needs more data</span>
+        <span class="chip chip-nogo">No-go</span>
+      </p>
+    </section>
+
+    <form id="form" class="layout" autocomplete="off" novalidate>
+      <nav class="toc" id="toc" aria-label="Sections">
+        <p class="toc-title">Sections</p>
+        <ol>
+          <li><a href="#limitsPanel"><span class="toc-num">01</span><span>Agent and limits</span></a></li>
+          <li><a href="#dataPanel" data-state="data"><span class="toc-num">02</span><span>Sample results</span></a></li>
+          <li><a href="#gatePanel" data-state="gate"><span class="toc-num">03</span><span>Data quality check</span></a></li>
+          <li><a href="#verdictPanel" data-state="results"><span class="toc-num">04</span><span>Verdict</span></a></li>
+          <li><a href="#statsPanel"><span class="toc-num">05</span><span>Statistics</span></a></li>
+          <li><a href="#chartsPanel"><span class="toc-num">06</span><span>Graphs</span></a></li>
+          <li><a href="#saePanel"><span class="toc-num">07</span><span>Sampling &amp; analytical error</span></a></li>
+          <li><a href="#workerPanel"><span class="toc-num">08</span><span>Between / within worker</span></a></li>
+          <li><a href="#comparePanel"><span class="toc-num">09</span><span>Comparison</span></a></li>
+          <li><a href="#settingsPanel"><span class="toc-num">10</span><span>Decision settings</span></a></li>
+          <li><a href="#reportPanel"><span class="toc-num">11</span><span>Report</span></a></li>
+          <li><a href="#methodPanel"><span class="toc-num">12</span><span>Method</span></a></li>
+        </ol>
+      </nav>
+
+      <div class="main">
+        <div id="messages" class="messages" aria-live="polite"></div>
+
+        <!-- 01 -->
+        <section class="panel titled" id="limitsPanel">
+          <h2><span class="num">01</span>Agent and limits</h2>
+          <div class="grid four">
+            <div class="field"><label class="name" for="agent">Agent</label><input class="entry" id="agent" placeholder="e.g. Toluene"></div>
+            <div class="field"><label class="name" for="unit">Unit</label>
+              <select class="entry" id="unit"><option>mg/m³</option><option>ppm</option><option>µg/m³</option><option>f/cc</option><option>mg/m³ (respirable)</option><option>dB(A)</option><option>other</option></select></div>
+            <div class="field"><label class="name" for="oel">OEL <span class="opt">(the limit to judge against)</span></label><input class="entry" id="oel" type="number" min="0" step="any" placeholder="e.g. 20"></div>
+            <div class="field"><label class="name" for="alFraction">Action level <span class="opt">as a fraction of the OEL</span></label>
+              <select class="entry" id="alFraction"><option value="0.5">½ OEL (OSHA action level)</option><option value="0.1">1/10 OEL</option><option value="0.25">¼ OEL</option><option value="0">none</option></select></div>
+            <div class="field"><label class="name" for="alValue">… or an action level value <span class="opt">(overrides the fraction)</span></label><input class="entry" id="alValue" type="number" min="0" step="any" placeholder="optional"></div>
+            <div class="field"><label class="name" for="seg">Similar exposure group (SEG)</label><input class="entry" id="seg" placeholder="e.g. Spray booth operators"></div>
+            <div class="field"><label class="name" for="assessor">Assessor</label><input class="entry" id="assessor"></div>
+            <div class="field"><label class="name" for="date">Assessment date</label><input class="entry" id="date" type="date"></div>
+            <div class="field full"><label class="name" for="task">Task / sampling description</label><input class="entry" id="task" placeholder="e.g. Full-shift TWA, solvent-based coating application"></div>
+            <div class="field full"><label class="name" for="notes">Notes <span class="opt">(method, laboratory, anything the report should carry)</span></label><textarea class="entry" id="notes" rows="2"></textarea></div>
+          </div>
+        </section>
+
+        <!-- 02 -->
+        <section class="panel titled" id="dataPanel">
+          <h2><span class="num">02</span>Sample results</h2>
+          <div class="grid two">
+            <div class="field">
+              <label class="name" for="samples">Results, one sample per line</label>
+              <p class="hint">Write a non-detect as <code>&lt;0.05</code> (the detection limit), a value above the method's range as <code>&gt;10</code>, and a range as <code>0.5-2</code>. After the result you can add, separated by commas: a worker ID, a date (YYYY-MM-DD), a group (e.g. before / after) and a note. A header row such as <code>result,worker,date,group</code> is optional. Paste straight from a spreadsheet.</p>
+              <textarea class="entry mono" id="samples" rows="14" placeholder="result,worker,date,group&#10;6.8,W1,2026-01-12,before&#10;&lt;2.0,W3,2026-02-02,before&#10;3.2,W1,2026-03-02,after"></textarea>
+            </div>
+            <div>
+              <div class="field"><label class="name" for="ndMethod">Non-detects (censored values)</label>
+                <select class="entry" id="ndMethod">
+                  <option value="mle">Maximum likelihood (censored MLE) — recommended</option>
+                  <option value="ros">Robust regression on order statistics (ROS)</option>
+                  <option value="half">Substitute DL / 2</option>
+                  <option value="sqrt2">Substitute DL / √2</option>
+                  <option value="dl">Substitute the detection limit (conservative)</option>
+                </select>
+                <p class="hint after">MLE and ROS use the information that a non-detect lies below its limit; substitution is kept for comparison with older assessments. Greater-than and range results are handled only by MLE.</p>
+              </div>
+              <h3>Sampling and analytical error (SAE)</h3>
+              <div class="field"><label class="name" for="saeMode">How to set it</label>
+                <select class="entry" id="saeMode"><option value="cv">From the method's coefficients of variation</option><option value="direct">Enter the SAE (± %) directly</option></select></div>
+              <div class="grid two" id="saeCvFields">
+                <div class="field"><label class="name" for="cvAnalytical">Analytical CV <span class="opt">(from the method, e.g. NIOSH 0.06–0.10)</span></label><input class="entry" id="cvAnalytical" type="number" min="0" step="0.01" value="0.10"></div>
+                <div class="field"><label class="name" for="cvSampling">Sampling (pump) CV <span class="opt">(OSHA uses 0.05)</span></label><input class="entry" id="cvSampling" type="number" min="0" step="0.01" value="0.05"></div>
+              </div>
+              <div class="field" id="saeDirectField" hidden><label class="name" for="saePct">SAE, ± % at 95% confidence <span class="opt">(the NIOSH accuracy criterion is ±25%)</span></label><input class="entry" id="saePct" type="number" min="0" step="1" value="25"></div>
+              <h3>Parsed</h3>
+              <p class="calc plain" id="dataSummary"></p>
+              <div class="field"><label class="name" for="analyzeGroup">Samples to analyse <span class="opt">(when the data carry group labels)</span></label>
+                <select class="entry" id="analyzeGroup" disabled><option value="">All samples</option></select>
+                <p class="hint after">Before / after a change, judge the current situation on its own group; 09 Comparison still compares the groups.</p></div>
+            </div>
+          </div>
+          <div id="dataTable"></div>
+        </section>
+
+        <!-- 03 -->
+        <section class="panel titled" id="gatePanel">
+          <h2><span class="num">03</span>Data quality check <span class="opt">the gatekeeper: do these samples belong together?</span></h2>
+          <p class="hint">Statistics describe one exposure situation. Before any are run, confirm that every sample comes from the same similar exposure group under the same conditions. This is not a goodness-of-fit test: one sample a year over four years with different production rates fits a lognormal perfectly and still cannot be pooled.</p>
+          <div class="gate-q">
+            <div class="gq head"><span>Question</span><span>Yes</span><span>No</span><span>Unknown</span></div>
+            <div class="gq"><span>Same task, process and materials for every sample</span><input type="radio" name="gate_sameTask" value="yes" checked><input type="radio" name="gate_sameTask" value="no"><input type="radio" name="gate_sameTask" value="unknown"></div>
+            <div class="gq"><span>Same engineering and administrative controls in place for every sample</span><input type="radio" name="gate_sameControls" value="yes" checked><input type="radio" name="gate_sameControls" value="no"><input type="radio" name="gate_sameControls" value="unknown"></div>
+            <div class="gq"><span>Similar production rate, workload or throughput</span><input type="radio" name="gate_sameRate" value="yes" checked><input type="radio" name="gate_sameRate" value="no"><input type="radio" name="gate_sameRate" value="unknown"></div>
+            <div class="gq"><span>Same sampling and analytical method (and laboratory)</span><input type="radio" name="gate_sameMethod" value="yes" checked><input type="radio" name="gate_sameMethod" value="no"><input type="radio" name="gate_sameMethod" value="unknown"></div>
+            <div class="gq"><span>Comparable sample durations (all full-shift TWAs, or all the same task period)</span><input type="radio" name="gate_sameDuration" value="yes" checked><input type="radio" name="gate_sameDuration" value="no"><input type="radio" name="gate_sameDuration" value="unknown"></div>
+            <div class="gq"><span>Samples spread over different days and shifts</span><input type="radio" name="gate_spread" value="yes" checked><input type="radio" name="gate_spread" value="no"><input type="radio" name="gate_spread" value="unknown"></div>
+            <div class="gq"><span>No process, control or product change within the sampling period</span><input type="radio" name="gate_noChange" value="yes" checked><input type="radio" name="gate_noChange" value="no"><input type="radio" name="gate_noChange" value="unknown"></div>
+          </div>
+          <h3>Result <span class="opt">(your answers plus the automatic checks on sample count, censoring, time span, trend, outliers and workers)</span></h3>
+          <div id="gateResult"></div>
+          <div id="gateOverrideWrap" class="override" hidden>
+            <label class="chk"><input type="checkbox" id="gateOverride"> Run the statistics anyway (the report records that the data-quality check failed and why)</label>
+            <input class="entry" id="gateReason" placeholder="Reason for pooling these samples regardless">
+          </div>
+        </section>
+
+        <!-- 04 -->
+        <section class="panel titled" id="verdictPanel">
+          <h2><span class="num">04</span>Verdict <span class="opt">the compliance call in plain language</span></h2>
+          <div class="verdict-head"><div id="verdictTitle"></div><div id="gateChip"></div></div>
+          <div id="stoplight" class="stoplight-wrap"></div>
+          <p class="hint">The marker is the estimated 95th percentile of exposures as a fraction of the OEL; the bar through it spans its lower 95% confidence limit to its UTL<sub>95,95</sub>. The bands are AIHA's exposure categories; the figure under each is the Bayesian probability that the 95th percentile falls in it.</p>
+          <div id="verdictReasons" class="explain reasons"></div>
+          <div id="bayesDecision" hidden>
+            <h3>Bayesian decision analysis <span class="opt">probability of each AIHA category</span></h3>
+            <div id="bandBars"></div>
+          </div>
+        </section>
+
+        <!-- 05 -->
+        <section class="panel titled" id="statsPanel">
+          <h2><span class="num">05</span>Statistics <span class="opt">essential results</span></h2>
+          <div id="singleWrap" hidden><h3>One sample</h3><div id="singleStats" class="explain"></div></div>
+          <div id="statsWrap">
+            <div class="keynums" id="keyNumbers"></div>
+            <h3>Lognormal estimates: frequentist and Bayesian side by side</h3>
+            <div id="statsTable"></div>
+            <h3>Goodness of fit: lognormal vs normal</h3>
+            <div id="gofBox"></div>
+            <h3>Non-parametric view <span class="opt">(no distribution assumed; the fallback when the fit is poor)</span></h3>
+            <div id="npBox" class="explain"></div>
+          </div>
+        </section>
+
+        <!-- 06 -->
+        <section class="panel titled" id="chartsPanel">
+          <h2><span class="num">06</span>Graphs</h2>
+          <div id="chartsWrap">
+            <h3>Results in sequence</h3>
+            <div id="chartSequence"></div>
+            <div id="chartDensityWrap"><h3>Fitted exposure distribution</h3><div id="chartDensity"></div></div>
+            <div id="chartQQWrap"><h3>Lognormal probability plot</h3><div id="chartQQ"></div><p class="hint">Points on the line support the lognormal; a bend or a split suggests a mixture of exposure situations (back to the gatekeeper). Open markers are censored values drawn at their bound.</p></div>
+            <div id="chartPosteriorWrap"><h3>Posterior of the 95th percentile</h3><div id="chartPosterior"></div></div>
+          </div>
+        </section>
+
+        <!-- 07 -->
+        <section class="panel titled" id="saePanel">
+          <h2><span class="num">07</span>Sampling and analytical error <span class="opt">each sample on its own</span></h2>
+          <div id="saeWrap">
+            <div id="saeSummary" class="explain"></div>
+            <div id="saeChart"></div>
+            <div id="saeTable"></div>
+            <p class="note">OSHA's single-sample decision rule: with the result as a fraction of the OEL (Y) and the sampling and analytical error (SAE), the lower and upper confidence limits are Y × (1 ∓ SAE). An overexposure is established when the LCL exceeds 1; compliance when the UCL is below 1; otherwise a possible overexposure. The SAE is 1.645 × the total CV (√(CV<sub>analytical</sub>² + CV<sub>sampling</sub>²)) at 95% one-sided confidence.</p>
+          </div>
+        </section>
+
+        <!-- 08 -->
+        <section class="panel titled" id="workerPanel">
+          <h2><span class="num">08</span>Between-worker and within-worker variance</h2>
+          <p class="hint" id="workerNone"></p>
+          <div id="workerWrap" hidden>
+            <div id="workerBox"></div>
+            <div id="workerChart"></div>
+          </div>
+        </section>
+
+        <!-- 09 -->
+        <section class="panel titled" id="comparePanel">
+          <h2><span class="num">09</span>Before / after or group-to-group comparison</h2>
+          <p class="hint" id="compareNone"></p>
+          <div id="compareWrap" hidden>
+            <div id="compareBox"></div>
+            <div id="compareChart"></div>
+          </div>
+        </section>
+
+        <!-- 10 -->
+        <section class="panel titled" id="settingsPanel">
+          <h2><span class="num">10</span>Decision settings</h2>
+          <div class="grid three">
+            <div class="field"><label class="name" for="goThreshold">"Go" when the overexposure risk is below <span class="opt">(%)</span></label><input class="entry" id="goThreshold" type="number" min="0" max="100" step="1" value="5"></div>
+            <div class="field"><label class="name" for="nogoThreshold">"No-go" when the overexposure risk is at or above <span class="opt">(%)</span></label><input class="entry" id="nogoThreshold" type="number" min="0" max="100" step="1" value="30"></div>
+            <div class="field"><label class="name" for="singleGsd">Assumed GSD for a single sample</label><input class="entry" id="singleGsd" type="number" min="1.05" step="0.1" value="2.5"></div>
+          </div>
+          <p class="hint">Overexposure risk is the probability that the 95th percentile exceeds the OEL, i.e. that more than 5% of exposures exceed it. 5% matches "95% confident the 95th percentile is below the OEL" (the UTL<sub>95,95</sub> test); 30% is the threshold Expostats proposes for a poorly controlled exposure. Between the two the exposure is in the gray zone: more data, or more control.</p>
+          <label class="chk"><input type="checkbox" id="usePrior"> Apply a decision prior over the four AIHA categories (IHSTAT-Bayes style professional judgement)</label>
+          <div class="grid four" id="priorFields" hidden>
+            <div class="field"><label class="name" for="prior1">&lt; 10% of OEL (%)</label><input class="entry" id="prior1" type="number" min="0" step="1" value="25"></div>
+            <div class="field"><label class="name" for="prior2">10 – 50% (%)</label><input class="entry" id="prior2" type="number" min="0" step="1" value="25"></div>
+            <div class="field"><label class="name" for="prior3">50 – 100% (%)</label><input class="entry" id="prior3" type="number" min="0" step="1" value="25"></div>
+            <div class="field"><label class="name" for="prior4">&gt; 100% (%)</label><input class="entry" id="prior4" type="number" min="0" step="1" value="25"></div>
+          </div>
+          <div class="grid three">
+            <div class="field"><label class="chk"><input type="checkbox" id="informative"> Use the assumed-GSD prior even with several samples <span class="opt">(for 2–3 samples)</span></label></div>
+            <div class="field"><label class="name" for="seed">Random seed <span class="opt">(change to check the Monte Carlo noise)</span></label><input class="entry" id="seed" type="number" step="1" value="20261113"></div>
+          </div>
+        </section>
+
+        <!-- 11 -->
+        <section class="panel titled" id="reportPanel">
+          <h2><span class="num">11</span>Report <span class="opt">inputs, data quality, statistics and verdict</span></h2>
+          <p class="actions left">
+            <button type="button" class="btn" id="copyReport">Copy results block</button>
+            <button type="button" class="btn ghost" id="downloadReport">Download .txt</button>
+            <button type="button" class="btn ghost" id="downloadJson">Download .json</button>
+            <button type="button" class="btn ghost" id="downloadCsv">Download data .csv</button>
+            <button type="button" class="btn ghost" id="printPage">Print / PDF</button>
+          </p>
+          <textarea class="entry mono report" id="reportBlock" rows="28" readonly></textarea>
+        </section>
+
+        <!-- 12 -->
+        <section class="panel titled" id="methodPanel">
+          <h2><span class="num">12</span>Method and references</h2>
+          <details open><summary>What the tool does, in order</summary>
+            <ol class="method">
+              <li><b>Gatekeeper.</b> Seven yes / no / unknown questions about the SEG, plus automatic checks: sample count, share of censored results, the time span and a Spearman trend test on dated results, Grubbs' outlier test on the log scale, and whether worker IDs allow a between-worker check. A "No" fails the gate and the statistics are withheld unless the assessor overrides (the report says so).</li>
+              <li><b>Sampling and analytical error.</b> Each sample's confidence limits against the OEL by the OSHA single-sample rule (SAE = 1.645 × total CV).</li>
+              <li><b>Lognormal fit.</b> Non-detects, above-range values and ranges by censored maximum likelihood (Nelder-Mead on the log-likelihood), or ROS, or substitution. GM, GSD; 95% CI on the GM (t) and the GSD (chi-square); AM with Cox's confidence limits; 95th percentile with the exact one-sided tolerance factor K (noncentral t) for the UTL<sub>95,95</sub> and the lower limit; exceedance fraction with confidence limits through the noncentral t.</li>
+              <li><b>Goodness of fit.</b> Shapiro-Wilk W (Royston's AS R94) on the log and the arithmetic scale, with the probability-plot correlation and the Q-Q plot.</li>
+              <li><b>Bayesian analysis.</b> Gibbs sampler with data augmentation for censored values: flat prior on log GM, uniform prior on log GSD up to GSD 10 (as in Expostats). Gives 90% credible intervals, the overexposure risk P(X<sub>95</sub> &gt; OEL), P(AM &gt; OEL), the probability of each AIHA category and, optionally, a decision prior over the categories (IHSTAT-Bayes). With one sample a prior on the GSD (default 2.5) stands in for the spread.</li>
+              <li><b>Workers.</b> One-way random-effects ANOVA on the log results (between- and within-worker GSD, R, the probability that a random worker's 95th percentile or mean exceeds the OEL) and the same model by Gibbs sampling.</li>
+              <li><b>Comparison.</b> Two groups: Welch's t-test on the logs (GM ratio and CI), an F-test on the GSDs, and the Bayesian probability that the second group's GM, 95th percentile and AM are lower.</li>
+              <li><b>Non-parametric fallback.</b> Median, empirical 95th percentile (Hazen), count above the OEL with an exact binomial CI, and the confidence that the maximum is an upper tolerance limit.</li>
+              <li><b>Verdict.</b> Go when the overexposure risk is below the go threshold; no-go when it is at or above the no-go threshold or the point estimate of the 95th percentile exceeds the OEL; otherwise the gray zone. The action level is judged the same way.</li>
+            </ol>
+          </details>
+          <details><summary>References</summary>
+            <ul class="refs">
+              <li>AIHA. <em>A Strategy for Assessing and Managing Occupational Exposures</em>, 4th ed. (Jahn, Bullock, Ignacio, eds.), 2015. Exposure categories, the 95th percentile decision statistic, IHSTAT.</li>
+              <li>Mulhausen, J. and Damiano, J. IHSTAT and IHSTAT-Bayes (AIHA Exposure Assessment Strategies Committee). Hewett, P. IHDA.</li>
+              <li>Lavoué, J. et al. Expostats (expostats.ca): Bayesian lognormal model, overexposure risk thresholds, between-worker model.</li>
+              <li>OSHA Technical Manual, Section II, Chapter 1 (sampling and analytical error); NIOSH Manual of Analytical Methods, accuracy criterion.</li>
+              <li>Rappaport, S. M., Kromhout, H. and Symanski, E. (1993) between- and within-worker variance components; Rappaport's probability of individual overexposure.</li>
+              <li>Helsel, D. R. (2005) <em>Nondetects and Data Analysis</em>: ROS and censored MLE. Hewett, P. and Ganser, G. H. (2007) on non-detect methods.</li>
+              <li>Royston, P. (1995) Shapiro-Wilk W, AS R94. Lenth, R. V. (1989) noncentral t, AS 243. Land, C. E. (1972) and Cox's method for the confidence limits on the arithmetic mean of a lognormal.</li>
+            </ul>
+          </details>
+          <p class="note">This tool supports the evaluator's professional judgement and does not replace it. Nothing you enter leaves the browser; the form is kept in this browser's local storage so you can come back to it.</p>
+        </section>
+      </div>
+
+      <aside class="side">
+        <section class="panel results" aria-live="polite">
+          <h2>Results <span class="opt">live</span></h2>
+          <p id="pStatus"></p>
+          <p class="hero pending" id="pHero">—</p>
+          <p class="small" id="pHeroLabel">enter sample results</p>
+          <p class="decision" id="pTitle"></p>
+          <p id="pGate"></p>
+          <dl class="facts" id="pFacts"></dl>
+        </section>
+      </aside>
+    </form>
+  </main>
+
+  <footer class="foot wrap"><p>OEMS Exposure Statistics Tool · one of the OEMS calculators · this tool supports the evaluator's professional judgement and does not replace it.</p></footer>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

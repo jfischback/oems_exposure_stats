@@ -1,0 +1,11 @@
+{
+  "name": "oems-exposure-stats",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "OEMS Exposure Statistics Tool: from raw sample results through SAE, confidence limits, the 95th percentile, UCL / UTL, exceedance fraction and Bayesian decision analysis to a plain-language compliance call.",
+  "scripts": {
+    "test": "node tests/check.mjs",
+    "reference": "python3 scripts/make-reference.py"
+  }
+}
