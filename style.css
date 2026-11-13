@@ -45,6 +45,10 @@ small { font-size: 0.8em; color: var(--muted); font-weight: 400; }
 .brand-full { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: #cbd5e1; }
 .tag { padding-left: 18px; border-left: 1px solid rgba(255, 255, 255, 0.25); font-size: 0.9rem; color: #dbe4f0; text-align: right; }
 
+.topbar-right { display: flex; align-items: center; gap: 18px; }
+.alltools { flex: 0 0 auto; color: #fff; text-decoration: none; font-size: 0.85rem; font-weight: 600; padding: 8px 14px; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 999px; background: rgba(255, 255, 255, 0.08); white-space: nowrap; transition: background .15s; }
+.alltools:hover { background: rgba(255, 255, 255, 0.18); }
+
 /* Intro header (slate grey card) */
 .intro { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 22px 40px; align-items: end; margin: 18px 0; padding: 30px 32px 0; border-radius: 18px; overflow: hidden; color: #fff;
   background: linear-gradient(120deg, #334155 0%, #475569 100%); border: 1px solid #334155; box-shadow: 0 8px 22px rgba(15, 23, 42, 0.18); }
@@ -293,7 +297,7 @@ details summary { cursor: pointer; font-size: 0.9rem; font-weight: 600; }
 @media print {
   body { background: #fff; }
   .layout { display: block; }
-  .topbar, .toc, .btn, .actions, .foot, .oems-gate, .chk, #settingsPanel .grid, .messages { display: none !important; }
+  .topbar, .alltools, .toc, .btn, .actions, .foot, .oems-gate, .chk, #settingsPanel .grid, .messages { display: none !important; }
   .intro { display: block; padding: 0; margin: 0 0 12px; background: none; box-shadow: none; color: inherit; border: 0; }
   .intro h1, .intro .lead, .intro .intro-src { color: #000; }
   .intro .draft { background: none; color: #555; padding: 0; }
