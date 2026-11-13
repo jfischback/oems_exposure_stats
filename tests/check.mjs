@@ -129,6 +129,12 @@ for (const s of R.shapiro) {
   truthy("5 with ±25% is compliant", c.cls === "compliant");
   const res2 = E.analyze({ samplesText: "14", oel: 10, sae: { mode: "direct", saePct: 25 }, bayes: { draws: 500, burn: 100 } });
   truthy("14 with ±25% is an overexposure", res2.sae.perSample[0].cls === "over");
+  // The rule is Y ∓ SAE: 13 against an OEL of 10 gives 1.30 - 0.25 = 1.05, an overexposure.
+  const res3 = E.analyze({ samplesText: "13\n1", oel: 10, sae: { mode: "direct", saePct: 25 }, bayes: { draws: 500, burn: 100 } });
+  close("LCL is Y - SAE", res3.sae.perSample[0].lcl, 1.05, 1e-12);
+  close("UCL is Y + SAE", res3.sae.perSample[0].ucl, 1.55, 1e-12);
+  truthy("13 with ±25% is an overexposure", res3.sae.perSample[0].cls === "over");
+  close("LCL is not shown below zero", res3.sae.perSample[1].lcl, 0, 1e-12);
   truthy("single sample overexposure is a no-go", res2.verdict.status === "nogo", res2.verdict.title);
   close("SAE from CVs", E.analyze({ samplesText: "1", oel: 10, sae: { mode: "cv", cvAnalytical: 0.08, cvSampling: 0.06 }, bayes: { draws: 200, burn: 50 } }).sae.sae, 1.6448536269514722 * 0.1, 1e-9);
 }

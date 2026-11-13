@@ -671,7 +671,9 @@ export function saeAnalysis(rows, saeIn, oel) {
   const perSample = rows.map(r => {
     const x = r.type === "exact" ? r.value : r.type === "lt" ? r.hi : r.type === "gt" ? r.lo : Math.sqrt(r.lo * r.hi);
     const y = x / oel;
-    const lcl = y * (1 - sae), ucl = y * (1 + sae);
+    // OSHA Technical Manual single-sample rule: the SAE is added to and subtracted from Y.
+    // The lower limit is not shown below zero.
+    const lcl = Math.max(0, y - sae), ucl = y + sae;
     let cls, text;
     if (r.type === "lt") { cls = ucl < 1 ? "compliant" : "possible"; text = ucl < 1 ? "Below the OEL (non-detect)" : "Non-detect, but the detection limit is close to the OEL"; }
     else if (lcl > 1) { cls = "over"; text = "Overexposure: the lower confidence limit is above the OEL"; }
